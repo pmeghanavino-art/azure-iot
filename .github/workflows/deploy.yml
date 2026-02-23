@@ -54,6 +54,6 @@ jobs:
             docker run -d \
               --name my-iot-container \
               -p 8081:8080 \
-              -e CONNECTION_STRING='${{ secrets.CONNECTION_STRING }}' \
+              -e CONNECTION_STRING='${{ secrets.IOT_DEVICE_CONN}}' \
               ${{ secrets.DOCKER_USERNAME }}/my-iot-app:latest
           EOF
