@@ -1,50 +1,41 @@
 package in.azure.iot;
 
 import com.microsoft.azure.sdk.iot.device.*;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
 
-public class IoTDevice {
+@Component
+public class IoTDevice implements CommandLineRunner {
 
-    private static final String CONNECTION_STRING =System.getenv("IOT_DEVICE_CONN");
-    public static void main(String[] args) {
+    @Override
+    public void run(String... args) throws Exception {
 
-        DeviceClient client = null;
+        String conn =    System.getenv("IOT_DEVICE_CONN");
 
-        try {
-            client = new DeviceClient(CONNECTION_STRING, IotHubClientProtocol.MQTT);
+        if (conn == null || conn.isBlank()) {
+            throw new RuntimeException("Missing IOT_DEVICE_CONN environment variable");
+        }
 
-            client.open(true);
+        DeviceClient client = new DeviceClient(conn, IotHubClientProtocol.MQTT);
+        client.open(true);
 
-            System.out.println("Device Connected → Machine ACTIVE");
+        System.out.println("Device Connected → Machine ACTIVE");
 
-            while (true) {
+        while (true) {
 
-                String payload = "{ \"status\": \"ACTIVE\" }";
+            Message msg = new Message("{\"status\":\"ACTIVE\"}");
 
-                Message msg = new Message(payload);
+            client.sendEventAsync(msg, (status, context, exception) -> {
 
-                client.sendEventAsync(msg, (status, context, exception) -> {
+                if (exception == null) {
+                    System.out.println("Message Sent → " + status);
+                } else {
+                    System.out.println("Send Failed → " + exception);
+                }
 
-                    if (exception == null) {
-                        System.out.println("Message Sent → " + status);
-                    } else {
-                        System.out.println("Send Failed → " + exception);
-                    }
+            }, null);
 
-                }, null);
-
-                Thread.sleep(30000);
-            }
-
-        } catch (Exception e) {
-
-            System.out.println("Connection Lost / Device OFF");
-            System.out.println("Reason: " + e.getMessage());
-
-        } finally {
-
-            try {
-                if (client != null) client.close();
-            } catch (Exception ignored) {}
+            Thread.sleep(30000);
         }
     }
 }
